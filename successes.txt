@@ -1,1 +1,2 @@
 - Implemented Project Scaffolding (sprint1-001)
+- Implemented Qdrant Vector Database Setup (sprint1-002)
