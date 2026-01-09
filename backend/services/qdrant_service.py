@@ -1,92 +1,147 @@
-from typing import List, Dict, Optional
+import os
+from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient, models
 from qdrant_client.http import models as qdrant_models
-import logging
+from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+class DocumentChunk(BaseModel):
+    """Represents a chunk of a document with metadata"""
+    text: str
+    metadata: Dict[str, Any]
+    embedding: Optional[List[float]] = None
 
 class QdrantService:
-    def __init__(self, host: str = "qdrant", port: int = 6333, api_key: Optional[str] = None):
-        self.client = QdrantClient(
-            host=host,
-            port=port,
-            api_key=api_key,
-            timeout=30.0
-        )
+    """Wrapper service for Qdrant vector database operations"""
 
-    def create_collection(self, collection_name: str, vector_size: int = 1536):
-        """Create a new collection in Qdrant."""
+    def __init__(self):
+        """Initialize Qdrant client from environment variables"""
+        qdrant_host = os.getenv("QDRANT_HOST", "localhost")
+        qdrant_port = int(os.getenv("QDRANT_PORT", "6333"))
+
+        self.client = QdrantClient(
+            host=qdrant_host,
+            port=qdrant_port,
+            prefer_grpc=False
+        )
+        self.collection_name = "documents"
+
+    def create_collection(self, vector_size: int = 768) -> bool:
+        """Create a collection for document embeddings"""
         try:
             self.client.create_collection(
-                collection_name=collection_name,
+                collection_name=self.collection_name,
                 vectors_config=qdrant_models.VectorParams(
                     size=vector_size,
                     distance=qdrant_models.Distance.COSINE
                 )
             )
-            logger.info(f"Collection '{collection_name}' created successfully.")
+            return True
         except Exception as e:
-            logger.error(f"Failed to create collection '{collection_name}': {e}")
-            raise
+            print(f"Error creating collection: {e}")
+            return False
 
-    def insert_vectors(
-        self,
-        collection_name: str,
-        vectors: List[List[float]],
-        payloads: List[Dict],
-        ids: Optional[List[str]] = None
-    ):
-        """Insert vectors into a collection."""
+    def collection_exists(self) -> bool:
+        """Check if collection exists"""
+        try:
+            return self.client.collection_exists(self.collection_name)
+        except Exception:
+            return False
+
+    def upsert_chunks(self, chunks: List[DocumentChunk]) -> bool:
+        """Upsert document chunks into Qdrant"""
+        if not chunks:
+            return False
+
+        # Prepare points for upsert
+        points = []
+        for chunk in chunks:
+            point = qdrant_models.PointStruct(
+                id=str(hash(chunk.text)),  # Simple hash-based ID
+                vector=chunk.embedding or [0.0] * 768,  # Default embedding if none provided
+                payload={
+                    "text": chunk.text,
+                    "metadata": chunk.metadata
+                }
+            )
+            points.append(point)
+
         try:
             self.client.upsert(
-                collection_name=collection_name,
-                points=qdrant_models.Batch(
-                    ids=ids or [None] * len(vectors),
-                    vectors=vectors,
-                    payloads=payloads
-                )
+                collection_name=self.collection_name,
+                points=points
             )
-            logger.info(f"Inserted {len(vectors)} vectors into '{collection_name}'.")
+            return True
         except Exception as e:
-            logger.error(f"Failed to insert vectors into '{collection_name}': {e}")
-            raise
+            print(f"Error upserting chunks: {e}")
+            return False
 
-    def search_vectors(
-        self,
-        collection_name: str,
-        query_vector: List[float],
-        limit: int = 5,
-        filters: Optional[Dict] = None
-    ) -> List[Dict]:
-        """Search for similar vectors in a collection."""
+    def search_similar(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+        """Search for similar documents"""
         try:
             results = self.client.search(
-                collection_name=collection_name,
+                collection_name=self.collection_name,
                 query_vector=query_vector,
-                limit=limit,
-                query_filter=filters
+                limit=limit
             )
-            return [
-                {
-                    "id": result.id,
-                    "score": result.score,
-                    "payload": result.payload
-                }
-                for result in results
-            ]
+            return [{
+                "text": result.payload["text"],
+                "metadata": result.payload["metadata"],
+                "score": result.score
+            } for result in results]
         except Exception as e:
-            logger.error(f"Failed to search vectors in '{collection_name}': {e}")
-            raise
+            print(f"Error searching: {e}")
+            return []
 
-    def get_collection_info(self, collection_name: str) -> Dict:
-        """Get information about a collection."""
+    def get_collection_info(self) -> Dict[str, Any]:
+        """Get collection information"""
         try:
-            info = self.client.get_collection(collection_name=collection_name)
-            return {
-                "name": collection_name,
-                "vectors_count": info.points_count,
-                "config": info.config
-            }
+            return self.client.get_collection(self.collection_name).dict()
         except Exception as e:
-            logger.error(f"Failed to get collection info for '{collection_name}': {e}")
-            raise
+            print(f"Error getting collection info: {e}")
+            return {}
+
+class HierarchicalChunkingService:
+    """Service for hierarchical document chunking"""
+
+    @staticmethod
+    def chunk_document(document: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
+        """Split document into chunks with overlap"""
+        chunks = []
+        start = 0
+        while start < len(document):
+            end = min(start + chunk_size, len(document))
+            chunks.append(document[start:end])
+            if end == len(document):
+                break
+            start = end - overlap
+        return chunks
+
+    @staticmethod
+    def create_hierarchical_chunks(document: str, metadata: Dict[str, Any]) -> List[DocumentChunk]:
+        """Create hierarchical chunks with metadata"""
+        # Parent document chunk
+        parent_chunk = DocumentChunk(
+            text=document,
+            metadata={
+                **metadata,
+                "chunk_type": "parent",
+                "chunk_level": 0
+            }
+        )
+
+        # Child chunks
+        text_chunks = HierarchicalChunkingService.chunk_document(document)
+        child_chunks = []
+        for i, chunk in enumerate(text_chunks):
+            child_chunks.append(DocumentChunk(
+                text=chunk,
+                metadata={
+                    **metadata,
+                    "chunk_type": "child",
+                    "chunk_level": 1,
+                    "chunk_index": i,
+                    "parent_id": str(hash(document))
+                }
+            ))
+
+        return [parent_chunk] + child_chunks

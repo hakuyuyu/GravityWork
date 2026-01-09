@@ -1,36 +1,41 @@
-### **PRIORITY 1: Infrastructure & Hygiene**
-- **Project Scaffolding**: Create a `README.md` with:
-  - Project description.
-  - Setup instructions.
-  - Architecture overview.
-- **Makefile**: Add targets for:
-  - `make setup` (install dependencies).
-  - `make test` (run tests).
-  - `make lint` (code quality checks).
-  - `make clean` (remove temp files).
-- **Temp Files**: Track all temporary files in `temp_files.txt` and clean them up.
+**CRITICAL: Python Environment**
+- Always use a virtual environment (`python3 -m venv venv && source venv/bin/activate`) for dependencies.
+- Never run `pip install` globally.
 
-### **PRIORITY 2: Core Features**
-- **Qdrant Vector DB**: Implement basic setup with:
-  - Connection handling.
-  - Error recovery.
-  - Logging.
-- **MCP Server Framework**: Define:
-  - API endpoints.
-  - Request/response schemas.
-  - Basic error handling.
+**PRIORITY 1: Project Scaffolding**
+- Create a `README.md` with:
+  - Project description
+  - Setup instructions
+  - Architecture overview
+- Create a `Makefile` with:
+  - `make setup` (installs dependencies)
+  - `make test` (runs tests)
+  - `make clean` (removes temp files)
 
-### **Quality Enforcement**
-- **All code must**:
-  - Be type-annotated (Python/JS/TS).
-  - Include docstrings (Google/Numpy style).
-  - Pass linting (flake8/pylint/eslint).
-- **No "just working" code**: Refactor if messy.
+**PRIORITY 2: Qdrant Vector Database Setup**
+- Use official Qdrant Python client.
+- Document connection logic in `README.md`.
+- Add error handling for DB failures.
 
-### **Blockers & Questions**
-- If stuck, log issues in `blockers.txt`.
-- Ask clarifications in `questions.txt`.
+**PRIORITY 3: MCP Server Framework**
+- Define API endpoints in `openapi.yaml`.
+- Use FastAPI or Flask (document choice in `README.md`).
 
-### **Deadline**
-- Next iteration must show **at least 2 features passing** (scaffolding + one core feature).
-No temp files tracked. Start logging them.
+**CODE QUALITY RULES**
+- **No undocumented functions**: Every function must have:
+  - Type hints (Python)
+  - Docstrings (Google style)
+- **No temp files**: Clean up after tests.
+- **No hardcoded secrets**: Use environment variables.
+
+**NEXT STEPS**
+1. Agents must report blockers in `blockers.txt`.
+2. Agents must log successes in `successes.txt`.
+3. Agents must ask questions in `questions.txt`.
+
+**REJECT CRITERIA**
+- If any feature is submitted without:
+  - Tests
+  - Documentation
+  - Clean code
+  → **REJECTED**.

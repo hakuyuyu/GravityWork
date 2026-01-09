@@ -22,3 +22,6 @@
 - Implemented sprint1-004 (Basic Chat Interface)
 - Implemented sprint1-005 (API Endpoint for Chat)
 - Implemented sprint1-005 (API Endpoint for Chat)
+- Implemented sprint1-006 (MCP Server for Jira)
+- Implemented sprint1-001: Project Scaffolding with FastAPI backend, Next.js frontend, and Docker setup
+- Implemented sprint1-002: Qdrant Vector Database Setup with collection management and hierarchical chunking
