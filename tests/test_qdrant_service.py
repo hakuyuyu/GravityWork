@@ -1,5 +1,6 @@
 import pytest
-from backend.services.qdrant_service import QdrantService, DocumentChunk, HierarchicalChunkingService
+from backend.services.qdrant_service import QdrantService, DocumentChunk
+from backend.services.chunking_service import HierarchicalChunkingService
 
 def test_hierarchical_chunking():
     """Test hierarchical document chunking"""

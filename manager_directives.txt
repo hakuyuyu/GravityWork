@@ -1,22 +1,14 @@
-**URGENT: PROJECT RESET REQUIRED**
-- **All features are failing (0/10).** This is unacceptable.
-- **Immediate Actions:**
-  1. **Reset the project** if the current state is unsalvageable.
-  2. **Start with infrastructure** (Project Scaffolding, Qdrant, MCP Servers).
-  3. **No new features** until core infrastructure is stable.
-  4. **Document everything**—no undocumented code will be accepted.
-  5. **Clean up temp files**—ensure `temp_files.txt` is empty.
+**CRITICAL PRIORITIES (SPRINT 1 REPAIR)**
 
-**Quality Enforcement:**
-- **No "just working" code.** All functions must be:
-  - Typed (TypeScript preferred).
-  - Documented (JSDoc/Markdown).
-  - Tested (unit/integration tests).
-- **No debris.** Remove all unused files.
+**1. FIX TEST SUITE & PACKAGE NAMES**
+- **Issue**: `tests` fail because of `ModuleNotFoundError: No module named 'mcp_servers'`.
+- **Cause**: Directory is `mcp-servers` (hyphen) but validation/imports expect `mcp_servers` (underscore).
+- **Action**: 
+  - Rename `mcp-servers` directory to `mcp_servers`.
+  - Update `docker-compose.yml` paths.
+  - Ensure `__init__.py` exists in all packages.
+  - RUN TESTS (`pytest`) locally to verify.
 
-**Next Priority:**
-- [infrastructure] Project Scaffolding (Must pass before anything else).
-- [data_layer] Qdrant Vector Database Setup.
-- [mcp_servers] MCP Server Framework.
-
-**Failure to comply = Rejection.**
+**3. LIVE VERIFICATION**
+- Keys are now in `.env`.
+- Ensure integration tests use `os.getenv` for credentials.

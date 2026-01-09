@@ -1,12 +1,15 @@
-from .base_mcp_server import BaseMCPServer
-from typing import Dict, Any
+from .base_mcp_server import MCPServer
+from typing import Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
-class SlackMCPServer(BaseMCPServer):
-    def __init__(self):
-        super().__init__("slack")
+class SlackMCPServer(MCPServer):
+    def __init__(self, config: Optional[Dict] = None):
+        super().__init__("Slack")
+
+def create_slack_server() -> SlackMCPServer:
+    return SlackMCPServer()
 
     def fetch_data(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Fetch data from Slack."""

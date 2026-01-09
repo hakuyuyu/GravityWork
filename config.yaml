@@ -4,7 +4,7 @@ auto_merge: false
 bash_timeout: 600
 cleanup: true
 description: "AI-powered online platform with intelligent automation and productivity tools"
-detached: false
+detached: true
 docker_timeout: 600
 git_user_email: recac-agent@example.com
 git_user_name: RECAC Agent
@@ -41,8 +41,8 @@ orchestrator:
     jira_query: ""
     mode: local
     namespace: default
-    poller: jira
-    work_file: work_items.json
+    poller: file
+    work_file: /workspace/work_items.json
 path: ""
 project: ""
 provider: openrouter

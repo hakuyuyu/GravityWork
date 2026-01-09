@@ -1,0 +1,9 @@
+[
+    {
+        "id": "sprint1-repair",
+        "title": "Repair Sprint 1: Fix Package Names and Tests",
+        "description": "Rename mcp-servers directory to mcp_servers. Fix pytest failures. Verify integration.",
+        "status": "open",
+        "priority": "critical"
+    }
+]

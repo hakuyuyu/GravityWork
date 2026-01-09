@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from services.qdrant.qdrant_service import QdrantService
-from services.document.chunking import DocumentChunker
+from backend.services.qdrant.qdrant_service import QdrantService
+from backend.services.chunking_service import HierarchicalChunkingService as DocumentChunker
 import logging
 
 # Configure logging
@@ -28,7 +28,7 @@ document_chunker = DocumentChunker()
 
 @app.get("/")
 async def root():
-    return {"message": "GravityWork Backend is running"}
+    return {"message": "GravityWork API"}
 
 @app.get("/health")
 async def health_check():
