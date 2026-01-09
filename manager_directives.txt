@@ -1,35 +1,22 @@
-**IMMEDIATE ACTIONS REQUIRED:**
+**URGENT: PROJECT RESET REQUIRED**
+- **All features are failing (0/10).** This is unacceptable.
+- **Immediate Actions:**
+  1. **Reset the project** if the current state is unsalvageable.
+  2. **Start with infrastructure** (Project Scaffolding, Qdrant, MCP Servers).
+  3. **No new features** until core infrastructure is stable.
+  4. **Document everything**—no undocumented code will be accepted.
+  5. **Clean up temp files**—ensure `temp_files.txt` is empty.
 
-1. **Project Scaffolding (Priority 1)**
-   - Create `README.md` with project overview, setup, and architecture.
-   - Create `Makefile` with `test`, `build`, `clean` targets.
-   - Set up `src/`, `tests/`, `docs/` directories.
+**Quality Enforcement:**
+- **No "just working" code.** All functions must be:
+  - Typed (TypeScript preferred).
+  - Documented (JSDoc/Markdown).
+  - Tested (unit/integration tests).
+- **No debris.** Remove all unused files.
 
-2. **Qdrant Vector DB Setup (Priority 1)**
-   - Dockerize Qdrant or use cloud instance.
-   - Write connection helper with error handling.
+**Next Priority:**
+- [infrastructure] Project Scaffolding (Must pass before anything else).
+- [data_layer] Qdrant Vector Database Setup.
+- [mcp_servers] MCP Server Framework.
 
-3. **MCP Server Framework (Priority 1)**
-   - Use FastAPI/Express.js for REST API.
-   - Ensure OpenAPI/Swagger docs are generated.
-
-4. **Frontend (Priority 2)**
-   - Basic React chat UI (no fancy animations yet).
-   - Must be responsive and accessible.
-
-5. **Intent Router (Priority 2)**
-   - Use TypeScript for type safety.
-   - Must log intents for debugging.
-
-6. **Testing (Priority 3)**
-   - Write unit tests for all core functions.
-   - Set up CI (GitHub Actions/GitLab CI).
-
-**CODE QUALITY RULES:**
-- No code without JSDoc/TypeScript.
-- No temp files left behind.
-- No "just working" code—must be tested.
-
-**REPORTING:**
-- If stuck, write to `blockers.txt`.
-- If unsure, ask in `questions.txt`.
+**Failure to comply = Rejection.**

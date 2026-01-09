@@ -1,4 +1,1 @@
-- Implemented Project Scaffolding (sprint1-001)
-- Implemented Qdrant Vector Database Setup (sprint1-002)
-- Implemented MCP Server Framework (sprint1-003)
-- Implemented Basic Chat Interface (sprint1-004)
+- Implemented Document Processing Pipeline (sprint1-005)
