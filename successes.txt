@@ -29,3 +29,4 @@
 - Implemented [feature-name]
 - Implemented sprint1-001: Project Scaffolding with README.md and Makefile
 - Fixed sprint1-001: Project Scaffolding with complete README.md and Makefile
+- Fixed sprint1-001: Project Scaffolding with complete README.md and Makefile
