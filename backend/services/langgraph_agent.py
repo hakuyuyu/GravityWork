@@ -227,7 +227,12 @@ class LangGraphAgent:
 
     async def _execute_node(self, state: AgentState):
         """Execute the planned action via MCP tools."""
-        pending_action = state.get("pending_action") or {}
+        pending_action = state.get("pending_action")
+        
+        if not pending_action:
+            # No action to execute, assume 'plan' node already provided the response
+            return {}
+
         action_type = pending_action.get("type", "unknown")
         scratchpad = state.get("scratchpad", {})
         
