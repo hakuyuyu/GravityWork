@@ -6,3 +6,7 @@ requests
 PyPDF2
 selenium
 pytest
+langgraph
+langchain
+langchain-openai
+langchain-community

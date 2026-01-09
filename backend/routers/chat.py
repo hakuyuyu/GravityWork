@@ -1,115 +1,86 @@
-"""
-Chat router for GravityWork.
-Handles AI chat interactions with intent routing.
-"""
-
-import asyncio
-from datetime import datetime
-from enum import Enum
-from typing import AsyncGenerator, Optional, List
-
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+from backend.services.intent_router import IntentRouter, IntentType
+from backend.services.langgraph_agent import LangGraphAgent
+from backend.services.qdrant_service import QdrantService
+import logging
+from datetime import datetime
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-
-class IntentType(str, Enum):
-    """Types of user intents detected by the router."""
-    RETRIEVAL = "retrieval"      # Direct knowledge lookup
-    AGGREGATION = "aggregation"  # Multi-source summary
-    ACTION = "action"            # Agentic task execution
-    CLARIFICATION = "clarification"  # Need more info
-
+# Initialize Services
+# We initialize logically, but in a real app might use dependency injection
+intent_router = IntentRouter()
+agent = LangGraphAgent()
+qdrant_service = QdrantService()
 
 class ChatMessage(BaseModel):
-    """A single chat message."""
-    role: str  # "user" or "assistant"
+    role: str
     content: str
     timestamp: Optional[str] = None
-    intent: Optional[IntentType] = None
-
 
 class ChatRequest(BaseModel):
-    """Chat request payload."""
     message: str
+    history: List[ChatMessage] = []
     conversation_id: Optional[str] = None
-    history: Optional[List[ChatMessage]] = []
-
 
 class ChatResponse(BaseModel):
-    """Chat response payload."""
-    message: str
-    intent: IntentType
-    sources: List[str] = []
-    conversation_id: str
+    response: str
+    intent: str
+    confidence: float
+    sources: Optional[List[Dict[str, Any]]] = None
+    conversation_id: Optional[str] = None
     timestamp: str
-    requires_confirmation: bool = False
-    draft_action: Optional[dict] = None
-
 
 @router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat_endpoint(request: ChatRequest):
     """
-    Process a chat message through the intent router.
-    
-    Flow:
-    1. Classify intent (Retrieval, Aggregation, Action)
-    2. Route to appropriate handler
-    3. Return response with sources
+    Main chat endpoint that routes through the Logic Layer.
     """
-    # TODO: Implement actual intent routing
-    # For now, return a placeholder response
-    
-    return ChatResponse(
-        message=f"[GravityWork] Received: {request.message}",
-        intent=IntentType.RETRIEVAL,
-        sources=[],
-        conversation_id=request.conversation_id or "conv_001",
-        timestamp=datetime.utcnow().isoformat(),
-        requires_confirmation=False,
-    )
+    try:
+        # 1. Classify Intent
+        classification = await intent_router.classify(request.message)
+        logger.info(f"Intent classified: {classification}")
 
+        response_text = ""
+        sources = []
 
-async def generate_stream(message: str) -> AsyncGenerator[str, None]:
-    """Generate streaming response chunks."""
-    # Placeholder streaming implementation
-    response = f"Processing your request: {message}"
-    
-    for word in response.split():
-        yield f"data: {word} \n\n"
-        await asyncio.sleep(0.05)
-    
-    yield "data: [DONE]\n\n"
+        # 2. Route based on Intent
+        if classification.intent == IntentType.ACTION:
+            # Delegate to Agent
+            response_text = await agent.run(request.message)
+            
+        elif classification.intent == IntentType.TRIAGE:
+            # Simple Triage (Sprint 2 Placeholder)
+            response_text = f"I see you want to check status ({classification.reasoning}). I'll check Jira..."
+            response_text += "\n\n(Note: Triage Agent logic pending full Jira connection in Sprint 3)"
 
+        else: # DIRECT_ANSWER / UNKNOWN
+            # Retrieval (RAG)
+            # Embed query (mock) and search Qdrant
+            # In a real app we'd embed the query
+            query_vector = [0.1] * 768 # Dummy vector
+            results = qdrant_service.search_similar(query_vector, limit=3)
+            
+            # Simple generation (Mock LLM response for Direct Answer if no LLM connected for RAG)
+            if results:
+                context = "\n".join([f"- {r['text']}" for r in results])
+                response_text = f"Based on knowledge base:\n{context[:500]}..."
+                sources = results
+            else:
+                response_text = "I couldn't find any specific documents about that in the knowledge base."
 
-@router.post("/stream")
-async def chat_stream(request: ChatRequest):
-    """
-    Stream chat response via Server-Sent Events (SSE).
-    
-    Provides real-time feedback during AI processing.
-    """
-    return StreamingResponse(
-        generate_stream(request.message),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        }
-    )
+        return ChatResponse(
+            response=response_text,
+            intent=classification.intent,
+            confidence=classification.confidence,
+            sources=sources,
+            conversation_id=request.conversation_id,
+            timestamp=datetime.utcnow().isoformat()
+        )
 
-
-@router.post("/confirm")
-async def confirm_action(conversation_id: str, approved: bool):
-    """
-    Confirm or reject a proposed action.
-    
-    Used for Human-in-the-Loop workflows.
-    """
-    if approved:
-        # TODO: Execute the pending action
-        return {"status": "executed", "conversation_id": conversation_id}
-    else:
-        return {"status": "cancelled", "conversation_id": conversation_id}
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

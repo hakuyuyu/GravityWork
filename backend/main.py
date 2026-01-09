@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from backend.services.qdrant.qdrant_service import QdrantService
 from backend.services.chunking_service import HierarchicalChunkingService as DocumentChunker
+from backend.routers import chat
 import logging
 
 # Configure logging
@@ -25,6 +26,9 @@ app.add_middleware(
 # Initialize services
 qdrant_service = QdrantService()
 document_chunker = DocumentChunker()
+
+# Include Routers
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 
 @app.get("/")
 async def root():
@@ -94,27 +98,16 @@ async def upsert_document(collection_name: str, document: dict):
             raise HTTPException(status_code=400, detail="Document text is required")
 
         # Chunk the document
-        chunks = document_chunker.chunk_with_metadata(
+        chunks = document_chunker.create_hierarchical_chunks(
             document["text"],
             document.get("metadata", {})
         )
 
         # Prepare vectors for Qdrant (using dummy vectors for now)
-        vectors = []
-        for i, chunk in enumerate(chunks):
-            vectors.append({
-                "id": f"{document.get('id', 'doc')}_{i}",
-                "vector": [0.0] * 1536,  # Placeholder - would be real embeddings
-                "payload": {
-                    "text": chunk["text"],
-                    "metadata": chunk["metadata"],
-                    "chunk_index": chunk["chunk_index"],
-                    "total_chunks": chunk["total_chunks"]
-                }
-            })
-
-        # Upsert vectors
-        success = qdrant_service.upsert_vectors(collection_name, vectors)
+        # Note: In real app, we'd generate embeddings here
+        # For now, relying on service to handle or use placeholder
+        success = qdrant_service.upsert_chunks(chunks)
+        
         if success:
             return {
                 "status": "success",
@@ -143,10 +136,9 @@ async def search_collection(collection_name: str, query: str, limit: int = 5):
     try:
         # In a real implementation, we would embed the query here
         # For now, using a dummy vector
-        query_vector = [0.1] * 1536
+        query_vector = [0.1] * 768 # Match QdrantService default size
 
-        results = qdrant_service.search_vectors(
-            collection_name,
+        results = qdrant_service.search_similar(
             query_vector,
             limit=limit
         )

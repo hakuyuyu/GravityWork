@@ -1,14 +1,19 @@
-**CRITICAL PRIORITIES (SPRINT 1 REPAIR)**
+**CRITICAL PRIORITIES (SPRINT 2: LOGIC LAYER)**
 
-**1. FIX TEST SUITE & PACKAGE NAMES**
-- **Issue**: `tests` fail because of `ModuleNotFoundError: No module named 'mcp_servers'`.
-- **Cause**: Directory is `mcp-servers` (hyphen) but validation/imports expect `mcp_servers` (underscore).
-- **Action**: 
-  - Rename `mcp-servers` directory to `mcp_servers`.
-  - Update `docker-compose.yml` paths.
-  - Ensure `__init__.py` exists in all packages.
-  - RUN TESTS (`pytest`) locally to verify.
+**1. IMPLEMENT AGENT ORCHESTRATION**
+- **Goal**: Finish `backend/services/langgraph_agent.py`.
+- **Action**:
+  - Implement actual `_scout_node` to query Qdrant/Jira.
+  - Implement `_execute_node` to call MCP tools (Jira/Slack).
+  - Verify flow: `IntentRouter` -> `LangGraphAgent` -> `MCP`.
 
-**3. LIVE VERIFICATION**
-- Keys are now in `.env`.
-- Ensure integration tests use `os.getenv` for credentials.
+**2. VERIFY INTENT ROUTER**
+- **Goal**: Ensure `backend/services/intent_router.py` correctly classifies:
+  - "What is the status of JIRA-123?" -> TRIAGE/ACTION
+  - "Create a ticket for..." -> ACTION
+  - "How do I..." -> DIRECT_ANSWER
+
+**3. INTEGRATION TEST**
+- Access `http://localhost:3000` (Frontend) or use `curl` to tests `/api/chat`.
+- Ensure responses flow back from the Agent.
+
