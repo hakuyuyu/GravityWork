@@ -4,8 +4,11 @@ import { useChat, ChatMessage } from '../hooks/useChat';
 import { cn } from '../utils/cn';
 import { useEffect, useRef } from 'react';
 
+import { useDashboard } from '../hooks/useDashboard';
+
 export default function Home() {
     const { messages, input, setInput, sendMessage, isLoading, handleConfirmAction } = useChat();
+    const { stats, activity, isLoading: isDashboardLoading } = useDashboard();
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom
@@ -127,40 +130,56 @@ export default function Home() {
             <div className="w-80 border-l border-border bg-background/50 p-4 hidden lg:flex flex-col overflow-y-auto">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Context</h3>
 
-                {/* Sprint Velocity Card */}
-                <div className="mb-4 rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-medium text-muted-foreground">Sprint Velocity</span>
-                        <span className="text-xs font-bold text-green-500">▲ 12%</span>
+                {isDashboardLoading ? (
+                    <div className="space-y-4 animate-pulse">
+                        <div className="h-24 bg-card rounded-lg" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="h-20 bg-card rounded-lg" />
+                            <div className="h-20 bg-card rounded-lg" />
+                        </div>
                     </div>
-                    <div className="text-2xl font-bold font-mono">42 SP</div>
-                    <div className="h-1 w-full bg-muted mt-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary w-[70%]" />
-                    </div>
-                </div>
+                ) : stats ? (
+                    <>
+                        {/* Sprint Velocity Card */}
+                        <div className="mb-4 rounded-lg border border-border bg-card p-3 shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs font-medium text-muted-foreground">Sprint Velocity</span>
+                                <span className="text-xs font-bold text-green-500">{stats.velocity.trend}</span>
+                            </div>
+                            <div className="text-2xl font-bold font-mono">{stats.velocity.value}</div>
+                            <div className="h-1 w-full bg-muted mt-2 rounded-full overflow-hidden">
+                                <div className="h-full bg-primary w-[70%]" />
+                            </div>
+                        </div>
 
-                {/* Ticket Stats Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="rounded-lg border border-border bg-card p-3">
-                        <div className="text-xs text-muted-foreground mb-1">Open</div>
-                        <div className="text-xl font-bold">12</div>
-                    </div>
-                    <div className="rounded-lg border border-border bg-card p-3">
-                        <div className="text-xs text-muted-foreground mb-1">Review</div>
-                        <div className="text-xl font-bold text-yellow-500">5</div>
-                    </div>
-                </div>
+                        {/* Ticket Stats Grid */}
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                            <div className="rounded-lg border border-border bg-card p-3">
+                                <div className="text-xs text-muted-foreground mb-1">{stats.active_tickets.label}</div>
+                                <div className="text-xl font-bold">{stats.active_tickets.value}</div>
+                            </div>
+                            <div className="rounded-lg border border-border bg-card p-3">
+                                <div className="text-xs text-muted-foreground mb-1">{stats.attention_needed.label}</div>
+                                <div className={`text-xl font-bold ${stats.attention_needed.value > 0 ? 'text-yellow-500' : 'text-green-500'}`}>
+                                    {stats.attention_needed.value}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-sm text-muted-foreground">Failed to load stats</div>
+                )}
 
                 {/* Recent Activity */}
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-2">Activity</h3>
                 <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex gap-2 text-xs">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                    {activity.map((item) => (
+                        <div key={item.id} className="flex gap-2 text-xs">
+                            <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${item.type === 'jira' ? 'bg-blue-500' : 'bg-gray-500'}`} />
                             <div>
-                                <span className="font-semibold text-foreground">JIRA-10{i}</span>
-                                <p className="text-muted-foreground">moved to In Progress</p>
-                                <span className="text-[10px] text-muted-foreground opacity-70">2h ago</span>
+                                <span className="font-semibold text-foreground">{item.project}</span>
+                                <p className="text-muted-foreground">{item.action}</p>
+                                <span className="text-[10px] text-muted-foreground opacity-70">{item.time}</span>
                             </div>
                         </div>
                     ))}

@@ -27,8 +27,10 @@ app.add_middleware(
 qdrant_service = QdrantService()
 document_chunker = DocumentChunker()
 
-# Include Routers
+from backend.routers import chat, dashboard
+
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 
 @app.get("/")
 async def root():

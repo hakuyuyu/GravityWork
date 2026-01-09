@@ -23,8 +23,12 @@ class JiraMCPServer(MCPServer):
             "status": "success",
             "data": {
                 "issues": [
-                    {"id": "10001", "key": "PROJ-1", "summary": "Test Issue", "status": "Open"},
-                    {"id": "10002", "key": "PROJ-2", "summary": "Another Issue", "status": "In Progress"}
+                    {"id": "10001", "key": "PROJ-1", "summary": "Initial Setup", "status": "Done"},
+                    {"id": "10002", "key": "PROJ-2", "summary": "Database Schema", "status": "Done"},
+                    {"id": "10003", "key": "PROJ-3", "summary": "API Authentication", "status": "In Progress"},
+                    {"id": "10004", "key": "PROJ-4", "summary": "Frontend Layout", "status": "In Progress"},
+                    {"id": "10005", "key": "PROJ-5", "summary": "Integration Tests", "status": "Open"},
+                    {"id": "10006", "key": "PROJ-6", "summary": "Deployment Pipeline", "status": "Blocked"}
                 ]
             }
         }
