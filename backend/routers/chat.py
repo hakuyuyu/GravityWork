@@ -1,20 +1,37 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from backend.services.intent_router import IntentRouter, IntentType
-from backend.services.langgraph_agent import LangGraphAgent
-from backend.services.qdrant_service import QdrantService
-import logging
 from datetime import datetime
+import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Initialize Services
-# We initialize logically, but in a real app might use dependency injection
-intent_router = IntentRouter()
-agent = LangGraphAgent()
-qdrant_service = QdrantService()
+# Lazy service initialization to avoid import-time failures
+_intent_router = None
+_agent = None
+_qdrant_service = None
+
+def get_intent_router():
+    global _intent_router
+    if _intent_router is None:
+        from backend.services.intent_router import IntentRouter
+        _intent_router = IntentRouter()
+    return _intent_router
+
+def get_agent():
+    global _agent
+    if _agent is None:
+        from backend.services.langgraph_agent import LangGraphAgent
+        _agent = LangGraphAgent()
+    return _agent
+
+def get_qdrant_service():
+    global _qdrant_service
+    if _qdrant_service is None:
+        from backend.services.qdrant_service import QdrantService
+        _qdrant_service = QdrantService()
+    return _qdrant_service
 
 class ChatMessage(BaseModel):
     role: str
@@ -39,7 +56,13 @@ async def chat_endpoint(request: ChatRequest):
     """
     Main chat endpoint that routes through the Logic Layer.
     """
+    from backend.services.intent_router import IntentType
+    
     try:
+        intent_router = get_intent_router()
+        agent = get_agent()
+        qdrant_service = get_qdrant_service()
+        
         # 1. Classify Intent
         classification = await intent_router.classify(request.message)
         logger.info(f"Intent classified: {classification}")
@@ -53,28 +76,28 @@ async def chat_endpoint(request: ChatRequest):
             response_text = await agent.run(request.message)
             
         elif classification.intent == IntentType.TRIAGE:
-            # Simple Triage (Sprint 2 Placeholder)
-            response_text = f"I see you want to check status ({classification.reasoning}). I'll check Jira..."
-            response_text += "\n\n(Note: Triage Agent logic pending full Jira connection in Sprint 3)"
+            # Delegate to Agent for triage as well
+            response_text = await agent.run(request.message)
 
         else: # DIRECT_ANSWER / UNKNOWN
             # Retrieval (RAG)
-            # Embed query (mock) and search Qdrant
-            # In a real app we'd embed the query
-            query_vector = [0.1] * 768 # Dummy vector
-            results = qdrant_service.search_similar(query_vector, limit=3)
-            
-            # Simple generation (Mock LLM response for Direct Answer if no LLM connected for RAG)
-            if results:
-                context = "\n".join([f"- {r['text']}" for r in results])
-                response_text = f"Based on knowledge base:\n{context[:500]}..."
-                sources = results
-            else:
-                response_text = "I couldn't find any specific documents about that in the knowledge base."
+            try:
+                query_vector = [0.1] * 768  # Dummy vector
+                results = qdrant_service.search_similar(query_vector, limit=3)
+                
+                if results:
+                    context = "\n".join([f"- {r['text']}" for r in results])
+                    response_text = f"Based on knowledge base:\n{context[:500]}..."
+                    sources = results
+                else:
+                    response_text = "I couldn't find any specific documents about that in the knowledge base."
+            except Exception as e:
+                logger.warning(f"Qdrant search failed: {e}")
+                response_text = "Knowledge base is not available. Please check Qdrant connection."
 
         return ChatResponse(
             response=response_text,
-            intent=classification.intent,
+            intent=classification.intent.value,
             confidence=classification.confidence,
             sources=sources,
             conversation_id=request.conversation_id,
