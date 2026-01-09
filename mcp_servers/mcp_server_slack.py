@@ -8,9 +8,6 @@ class SlackMCPServer(MCPServer):
     def __init__(self, config: Optional[Dict] = None):
         super().__init__("Slack")
 
-def create_slack_server() -> SlackMCPServer:
-    return SlackMCPServer()
-
     def fetch_data(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Fetch data from Slack."""
         # Mock implementation for now
@@ -24,3 +21,6 @@ def create_slack_server() -> SlackMCPServer:
                 ]
             }
         }
+
+def create_slack_server() -> SlackMCPServer:
+    return SlackMCPServer()

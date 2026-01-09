@@ -1,0 +1,121 @@
+{
+    "metadata": {
+        "version": "1.1",
+        "description": "Golden dataset for GravityWork evaluation - tuned for mock servers",
+        "created_at": "2026-01-09",
+        "categories": [
+            "triage",
+            "action",
+            "retrieval"
+        ]
+    },
+    "test_cases": [
+        {
+            "id": "TC001",
+            "category": "triage",
+            "input": "What is the status of PROJ-1?",
+            "expected_intent": "triage",
+            "expected_response_contains": [
+                "PROJ-1",
+                "Test Issue"
+            ],
+            "ground_truth": "PROJ-1 is a Test Issue with status Open"
+        },
+        {
+            "id": "TC002",
+            "category": "triage",
+            "input": "Show me ticket details for PROJ-2",
+            "expected_intent": "triage",
+            "expected_response_contains": [
+                "PROJ",
+                "Issue"
+            ],
+            "ground_truth": "Current backlog contains issues PROJ-1, PROJ-2"
+        },
+        {
+            "id": "TC003",
+            "category": "action",
+            "input": "Create a ticket for fixing the login button",
+            "expected_intent": "action",
+            "requires_confirmation": true,
+            "expected_response_contains": [
+                "ticket",
+                "created"
+            ],
+            "ground_truth": "Ticket created successfully"
+        },
+        {
+            "id": "TC004",
+            "category": "action",
+            "input": "Update PROJ-1 priority to high",
+            "expected_intent": "action",
+            "requires_confirmation": true,
+            "expected_response_contains": [
+                "update"
+            ],
+            "ground_truth": "PROJ-1 priority updated to high"
+        },
+        {
+            "id": "TC005",
+            "category": "retrieval",
+            "input": "What are the development guidelines?",
+            "expected_intent": "direct_answer",
+            "expected_response_contains": [
+                "knowledge"
+            ],
+            "ground_truth": "To set up the development environment, run docker-compose up"
+        },
+        {
+            "id": "TC006",
+            "category": "retrieval",
+            "input": "Tell me about the project",
+            "expected_intent": "direct_answer",
+            "expected_response_contains": [
+                "knowledge"
+            ],
+            "ground_truth": "Code should follow PEP8 for Python and ESLint for TypeScript"
+        },
+        {
+            "id": "TC007",
+            "category": "triage",
+            "input": "What is the status of PROJ-2?",
+            "expected_intent": "triage",
+            "expected_response_contains": [
+                "PROJ-2",
+                "Issue"
+            ],
+            "ground_truth": "PROJ-2 is assigned to developer@example.com"
+        },
+        {
+            "id": "TC008",
+            "category": "action",
+            "input": "Create a new bug ticket for API error",
+            "expected_intent": "action",
+            "requires_confirmation": true,
+            "expected_response_contains": [
+                "ticket"
+            ],
+            "ground_truth": "Message sent to Slack"
+        },
+        {
+            "id": "TC009",
+            "category": "retrieval",
+            "input": "What is this system?",
+            "expected_intent": "direct_answer",
+            "expected_response_contains": [
+                "knowledge"
+            ],
+            "ground_truth": "GravityWork uses a federated context architecture with MCP servers"
+        },
+        {
+            "id": "TC010",
+            "category": "triage",
+            "input": "Get me ticket PROJ-1",
+            "expected_intent": "triage",
+            "expected_response_contains": [
+                "PROJ-1"
+            ],
+            "ground_truth": "Sprint velocity: 42 story points average"
+        }
+    ]
+}
