@@ -1,6 +1,25 @@
+"use client";
+
+import { useChat, ChatMessage } from '../hooks/useChat';
 import { cn } from '../utils/cn';
+import { useEffect, useRef } from 'react';
 
 export default function Home() {
+    const { messages, input, setInput, sendMessage, isLoading, handleConfirmAction } = useChat();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(input);
+        }
+    };
+
     return (
         <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
             {/* LEFT SIDEBAR - Navigation & Projects (LeanWorks Style) */}
@@ -31,19 +50,51 @@ export default function Home() {
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     <div className="max-w-3xl mx-auto space-y-6">
-                        {/* Welcome Message */}
-                        <div className="flex justify-start">
-                            <div className="max-w-[80%] rounded-2xl rounded-tl-none bg-muted px-4 py-3 text-sm">
-                                Hello! I'm GravityWork. How can I help you orchestrate your project today?
-                            </div>
-                        </div>
 
-                        {/* User Message Example */}
-                        <div className="flex justify-end">
-                            <div className="max-w-[80%] rounded-2xl rounded-tr-none bg-primary text-primary-foreground px-4 py-3 text-sm">
-                                What is the status of JIRA-100?
+                        {messages.map((msg, idx) => (
+                            <div key={idx} className={cn("flex", msg.role === 'user' ? "justify-end" : "justify-start")}>
+                                <div className={cn(
+                                    "max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
+                                    msg.role === 'user'
+                                        ? "rounded-tr-none bg-primary text-primary-foreground"
+                                        : "rounded-tl-none bg-muted"
+                                )}>
+                                    {msg.content}
+
+                                    {/* Pending Action Confirmation UI */}
+                                    {msg.pending_action && (
+                                        <div className="mt-3 p-3 bg-background/50 rounded-lg border border-border">
+                                            <p className="font-semibold text-xs mb-1 text-muted-foreground">Action Required</p>
+                                            <p className="mb-3 font-mono text-xs">{msg.pending_action.description}</p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleConfirmAction(msg.pending_action!.action_id, true)}
+                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md transition-colors"
+                                                >
+                                                    Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => handleConfirmAction(msg.pending_action!.action_id, false)}
+                                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        ))}
+
+                        {isLoading && (
+                            <div className="flex justify-start">
+                                <div className="bg-muted px-4 py-3 rounded-2xl rounded-tl-none text-sm animate-pulse">
+                                    Thinking...
+                                </div>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
                     </div>
                 </div>
 
@@ -52,10 +103,18 @@ export default function Home() {
                     <div className="max-w-3xl mx-auto relative">
                         <input
                             type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             placeholder="Ask about tickets, tasks, or sprints..."
                             className="w-full bg-background border border-input rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-sm"
+                            disabled={isLoading}
                         />
-                        <button className="absolute right-2 top-2 p-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                        <button
+                            onClick={() => sendMessage(input)}
+                            className="absolute right-2 top-2 p-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                            disabled={isLoading}
+                        >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
