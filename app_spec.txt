@@ -1,0 +1,115 @@
+# 🚀 Project Plan: GravityWork
+
+**Internal Codename:** *GravityWork*
+**Target:** AI-Native Project Orchestration
+**Reference Architecture:** Compound AI System (Router → RAG → Agent)
+
+---
+
+## 📋 Executive Summary
+
+GravityWork is designed to be an AI-native collaboration platform that aggregates tools (Jira, Slack, GitHub) into a single intelligence layer. Unlike traditional RAG systems that rely on massive, slow data syncing, GravityWork will utilize a **Federated Context** architecture via MCP (Model Context Protocol) to provide real-time, low-latency, and agentic automation.
+
+---
+
+## 🏗 Phase 1: The Foundation (Data & Infrastructure)
+
+**Goal:** Build a "Second Brain" that engineers data rather than just dumping it.
+
+### 1.1 The "Federated Context" Architecture
+
+We will avoid central database synchronization for dynamic data to reduce latency and security risks.
+
+* **Strategy:** Deploy **MCP Servers** for live data retrieval.
+* **Components:**
+  * `mcp-server-jira`: Real-time fetching of ticket status and sprint velocity.
+  * `mcp-server-slack`: Reading thread history and sentiment analysis.
+  * `mcp-server-github`: Tracking PRs, commits, and "blame" history.
+
+* **Engineering Principle:** *Federated Context* (from *AI Engineering*) allows the AI to "scout" live data only when requested, minimizing token usage and storage costs.
+
+### 1.2 The Static ETL Pipeline
+
+For non-dynamic documentation (Wikis, PRDs, PDFs), we will build a robust RAG pipeline.
+
+* **Vector Database:** **Qdrant** (Optimized for metadata filtering).
+* **Chunking Strategy:** **Hierarchical Chunking** (Parent Document → Child Chunks) to preserve context.
+* **Requirement:** Every chunk must contain strict metadata:
+```json
+{
+  "project_id": "proj_001",
+  "author": "alice@company.com",
+  "timestamp": "2025-01-08",
+  "doc_type": "PRD"
+}
+```
+
+---
+
+## 🧠 Phase 2: The Intelligence Engine (Router & Agents)
+
+**Goal:** Move beyond a generic chatbot by implementing a "Router" to direct intent.
+
+### 2.1 The "Intent Router"
+
+A lightweight classification model (`gpt-4o-mini` or similar) will sort user queries into three buckets:
+
+1. **Direct Retrieval:** "What is the deadline?" → *Query Vector DB*.
+2. **Aggregation:** "Summarize the last 5 Slack threads about the login bug." → *Call MCP Slack Server → Map-Reduce Summary*.
+3. **Agentic Action:** "Create a ticket for this." → *Handoff to Action Agent*.
+
+### 2.2 The "Action Agent" (Vibe Logic)
+
+We will use **LangGraph** to manage the state of complex tasks.
+
+* **Workflow State Machine:**
+  1. **Scout Node:** Check `mcp-server-jira` for existing tickets to prevent duplicates.
+  2. **Draft Node:** Generate ticket title/description based on conversation context.
+  3. **Human-in-the-Loop Node:** Prompt user: *"Does this draft look correct?"*
+  4. **Commit Node:** Execute `jira.create_issue()`.
+
+---
+
+## 🛡 Phase 3: Reliability & Evaluation
+
+**Goal:** Ensure "Forward Deployed Engineer" (FDE) standards of reliability before launch.
+
+### 3.1 The "Golden Dataset"
+
+Create a ground-truth dataset (`test_set_pm.json`) with 50+ real-world examples:
+
+* **Input:** "Who is working on the login page?"
+* **Golden Answer:** "Alice is assigned to ticket JIRA-102."
+* **Negative Example:** "The login page is a feature."
+
+### 3.2 The Automated Evaluation Pipeline
+
+Integrate **RAGAS** (Retrieval Augmented Generation Assessment) into the CI/CD pipeline.
+
+* **Metrics:**
+  * **Faithfulness:** Did the AI hallucinate a ticket?
+  * **Relevance:** Did it answer the specific question?
+
+* **Policy:** No deployment to production if the Evaluation Score drops below 90%.
+
+---
+
+## 🗓 Execution Timeline
+
+| Sprint | Focus Area | Key Deliverables |
+| --- | --- | --- |
+| **Sprint 1** | **Data Layer** | Qdrant setup + MCP Servers for Jira/Slack deployed. |
+| **Sprint 2** | **Logic Layer** | "Intent Router" implemented + Basic Knowledge RAG. |
+| **Sprint 3** | **Agent Layer** | LangGraph workflows for "Create Ticket" & "Update Status". |
+| **Sprint 4** | **Reliability** | RAGAS pipeline integrated + Golden Dataset testing. |
+
+---
+
+## 🏆 Competitive Advantage
+
+**Why GravityWork beats other AI:**
+
+1. **Real-Time Accuracy:** By using **MCP**, we access live data, whereas competitors rely on stale, synced databases.
+2. **Agentic Precision:** Our **"Scout" pattern** prevents duplicate work and hallucinations.
+3. **Cost Efficiency:** **Federated Context** means we only pay for the data we actually use, not for syncing terabytes of unused logs.
+

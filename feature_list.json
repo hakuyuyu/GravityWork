@@ -1,0 +1,197 @@
+{
+  "project_name": "GravityWork",
+  "project_type": "ai_native_orchestration_platform",
+  "architecture": "compound_ai_system",
+  "features": [
+    {
+      "id": "sprint1-001",
+      "sprint": 1,
+      "category": "infrastructure",
+      "priority": "critical",
+      "description": "Project Scaffolding",
+      "status": "pending",
+      "steps": [
+        "Initialize Next.js 14 frontend with TypeScript",
+        "Set up FastAPI backend with Python 3.11+",
+        "Configure Docker Compose for local development",
+        "Set up environment configuration (.env templates)"
+      ],
+      "dependencies": {
+        "depends_on_ids": []
+      }
+    },
+    {
+      "id": "sprint1-002",
+      "sprint": 1,
+      "category": "data_layer",
+      "priority": "critical",
+      "description": "Qdrant Vector Database Setup",
+      "status": "pending",
+      "steps": [
+        "Add Qdrant to docker-compose.yml",
+        "Create collections for document embeddings",
+        "Implement QdrantService wrapper in backend",
+        "Set up hierarchical chunking pipeline"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint1-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint1-003",
+      "sprint": 1,
+      "category": "mcp_servers",
+      "priority": "critical",
+      "description": "MCP Server Framework",
+      "status": "pending",
+      "steps": [
+        "Create base MCP server template",
+        "Implement mcp-server-jira (read-only)",
+        "Implement mcp-server-slack (read-only)",
+        "Add health check endpoints"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint1-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint1-004",
+      "sprint": 1,
+      "category": "frontend",
+      "priority": "high",
+      "description": "Basic Chat Interface",
+      "status": "pending",
+      "steps": [
+        "Create chat UI component with dark/light theme",
+        "Implement message streaming via SSE",
+        "Add intent indicator (Retrieval/Aggregation/Action)",
+        "Build responsive layout"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint1-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint2-001",
+      "sprint": 2,
+      "category": "intelligence",
+      "priority": "critical",
+      "description": "Intent Router Implementation",
+      "status": "pending",
+      "steps": [
+        "Build classification prompt for intent routing",
+        "Implement Direct Retrieval path (Vector DB)",
+        "Implement Aggregation path (MCP + Map-Reduce)",
+        "Implement Agentic Action handoff"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint1-002",
+          "sprint1-003"
+        ]
+      }
+    },
+    {
+      "id": "sprint2-002",
+      "sprint": 2,
+      "category": "rag",
+      "priority": "high",
+      "description": "Knowledge RAG Pipeline",
+      "status": "pending",
+      "steps": [
+        "Implement document ingestion API",
+        "Build metadata extraction for chunks",
+        "Create retrieval with reranking",
+        "Add citation generation"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint1-002"
+        ]
+      }
+    },
+    {
+      "id": "sprint3-001",
+      "sprint": 3,
+      "category": "agents",
+      "priority": "critical",
+      "description": "LangGraph Action Agent",
+      "status": "pending",
+      "steps": [
+        "Set up LangGraph state machine",
+        "Implement Scout Node (duplicate detection)",
+        "Implement Draft Node (content generation)",
+        "Implement Human-in-the-Loop Node",
+        "Implement Commit Node (action execution)"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint2-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint3-002",
+      "sprint": 3,
+      "category": "agents",
+      "priority": "high",
+      "description": "Jira Ticket Workflows",
+      "status": "pending",
+      "steps": [
+        "Create Ticket workflow",
+        "Update Status workflow",
+        "Assign Ticket workflow",
+        "Add Comment workflow"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint3-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint4-001",
+      "sprint": 4,
+      "category": "reliability",
+      "priority": "critical",
+      "description": "Golden Dataset Creation",
+      "status": "pending",
+      "steps": [
+        "Define test case schema",
+        "Create 50+ real-world examples",
+        "Include positive and negative examples",
+        "Tag by intent category"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint3-001"
+        ]
+      }
+    },
+    {
+      "id": "sprint4-002",
+      "sprint": 4,
+      "category": "reliability",
+      "priority": "critical",
+      "description": "RAGAS Evaluation Pipeline",
+      "status": "pending",
+      "steps": [
+        "Integrate RAGAS library",
+        "Implement Faithfulness metric",
+        "Implement Relevance metric",
+        "Add CI/CD quality gate (90% threshold)"
+      ],
+      "dependencies": {
+        "depends_on_ids": [
+          "sprint4-001"
+        ]
+      }
+    }
+  ]
+}
