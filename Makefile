@@ -7,6 +7,8 @@ help:
 	@echo "  backend        - Start backend server"
 	@echo "  frontend       - Start frontend server"
 	@echo "  qdrant         - Start Qdrant vector database"
+	@echo "  mcp-jira       - Start Jira MCP server"
+	@echo "  mcp-slack      - Start Slack MCP server"
 
 .PHONY: setup
 setup:
@@ -32,3 +34,11 @@ frontend:
 .PHONY: qdrant
 qdrant:
 	docker-compose up qdrant
+
+.PHONY: mcp-jira
+mcp-jira:
+	cd mcp-servers && python mcp_server_jira.py
+
+.PHONY: mcp-slack
+mcp-slack:
+	cd mcp-servers && python mcp_server_slack.py
