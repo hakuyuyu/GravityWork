@@ -1,62 +1,45 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { cn } from '../utils/cn';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'GravityWork - AI-Native Project Orchestration',
-    description: 'Aggregate Jira, Slack, and GitHub into a single intelligence layer',
-    keywords: ['AI', 'Project Management', 'Automation', 'Jira', 'Slack', 'GitHub'],
-}
+    title: 'GravityWork | AI Project Orchestration',
+    description: 'Federated Context AI Agent for Project Management',
+};
 
 export default function RootLayout({
     children,
 }: {
-    children: React.ReactNode
+    children: React.ReactNode;
 }) {
     return (
         <html lang="en" className="dark">
-            <body className={`${inter.className} min-h-screen bg-gradient-to-br from-gravity-950 via-gray-900 to-gravity-900`}>
-                <div className="flex flex-col min-h-screen">
-                    {/* Navigation */}
-                    <nav className="border-b border-white/10 backdrop-blur-md bg-black/20">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex items-center justify-between h-16">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gravity-500 to-gravity-700 flex items-center justify-center">
-                                        <span className="text-white font-bold text-sm">G</span>
-                                    </div>
-                                    <span className="text-white font-semibold text-lg">GravityWork</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <button className="text-gray-400 hover:text-white transition-colors">
-                                        Dashboard
-                                    </button>
-                                    <button className="text-gray-400 hover:text-white transition-colors">
-                                        Integrations
-                                    </button>
-                                    <button className="px-4 py-2 rounded-lg bg-gravity-600 hover:bg-gravity-500 text-white text-sm font-medium transition-colors">
-                                        Settings
-                                    </button>
-                                </div>
+            <body className={cn(inter.className, "min-h-screen bg-background antialiased")}>
+                <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+                    <div className="flex h-14 items-center px-4">
+                        <div className="mr-4 hidden md:flex">
+                            <span className="text-lg font-bold text-primary">GravityWork</span>
+                        </div>
+                        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+                            <div className="w-full flex-1 md:w-auto md:flex-none">
+                                {/* Search placeholder */}
                             </div>
+                            <nav className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-muted-foreground mr-2">Workspace: Main</span>
+                                <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                                    JS
+                                </div>
+                            </nav>
                         </div>
-                    </nav>
-
-                    {/* Main Content */}
-                    <main className="flex-1">
-                        {children}
-                    </main>
-
-                    {/* Footer */}
-                    <footer className="border-t border-white/10 py-4">
-                        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-                            GravityWork © 2025 - AI-Native Project Orchestration
-                        </div>
-                    </footer>
-                </div>
+                    </div>
+                </nav>
+                <main className="flex-1">
+                    {children}
+                </main>
             </body>
         </html>
-    )
+    );
 }
