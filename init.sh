@@ -1,17 +1,24 @@
-#!/bin/bash
+#!/bin/sh
 
 # Install system dependencies
-apk add --no-cache nodejs npm python3 py3-pip
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
+apk add --no-cache \
+    docker-cli \
+    docker-compose \
+    python3 \
+    py3-pip \
+    nodejs \
+    npm \
+    make \
+    git \
+    bash
 
 # Install Python dependencies
-pip install --upgrade pip
-pip install fastapi uvicorn python-dotenv qdrant-client pytest httpx
+pip install --break-system-packages \
+    black \
+    flake8 \
+    pytest
 
 # Install Node.js dependencies
-cd frontend
-npm install
-cd ..
+npm install -g eslint
+
+echo "Environment setup complete"
