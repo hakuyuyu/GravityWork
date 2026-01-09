@@ -11,6 +11,8 @@ services:
       - ./backend:/app/backend
     environment:
       - ENVIRONMENT=development
+    depends_on:
+      - qdrant
 
   frontend:
     build:
@@ -22,3 +24,16 @@ services:
       - ./frontend:/app/frontend
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+
+  qdrant:
+    image: qdrant/qdrant:v1.7.0
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__API_KEY=your_api_key_here
+
+volumes:
+  qdrant_data:

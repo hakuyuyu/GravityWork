@@ -6,6 +6,7 @@ help:
 	@echo "  test           - Run all tests"
 	@echo "  backend        - Start backend server"
 	@echo "  frontend       - Start frontend server"
+	@echo "  qdrant         - Start Qdrant vector database"
 
 .PHONY: setup
 setup:
@@ -27,3 +28,7 @@ backend:
 .PHONY: frontend
 frontend:
 	cd frontend && npm run dev
+
+.PHONY: qdrant
+qdrant:
+	docker-compose up qdrant
