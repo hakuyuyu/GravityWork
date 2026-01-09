@@ -19,7 +19,7 @@ max_parallel_tickets: 1
 metrics_port: 2112
 mock: false
 mock-agent: false
-model: gemini-pro
+model: mistralai/devstral-2512:free
 name: "project.ai"
 notifications:
     slack:
@@ -45,8 +45,8 @@ orchestrator:
     work_file: work_items.json
 path: ""
 project: ""
-provider: gemini
-repo_url: ""
+provider: openrouter
+repo_url: "https://github.com/hakuyuyu/GravityWork.git"
 skip_qa: false
 stream: false
 summary: ""
