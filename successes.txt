@@ -25,3 +25,4 @@
 - Implemented sprint1-006 (MCP Server for Jira)
 - Implemented sprint1-001: Project Scaffolding with FastAPI backend, Next.js frontend, and Docker setup
 - Implemented sprint1-002: Qdrant Vector Database Setup with collection management and hierarchical chunking
+- Implemented sprint1-003: MCP Server Framework with Jira and Slack MCP servers
