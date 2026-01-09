@@ -1,0 +1,5 @@
+- Priority 1: Initialize project scaffolding (README.md, Makefile).
+- Priority 2: Set up Qdrant vector database.
+- Priority 3: Implement MCP server framework.
+- Requirement: All code must be tested, documented, and typed.
+- Requirement: Clean up temp_files.txt after each session.

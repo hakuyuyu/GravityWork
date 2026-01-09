@@ -1,15 +1,13 @@
 {
   "project_name": "GravityWork",
-  "project_type": "ai_native_orchestration_platform",
-  "architecture": "compound_ai_system",
   "features": [
     {
       "id": "sprint1-001",
-      "sprint": 1,
       "category": "infrastructure",
       "priority": "critical",
       "description": "Project Scaffolding",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Initialize Next.js 14 frontend with TypeScript",
         "Set up FastAPI backend with Python 3.11+",
@@ -17,16 +15,18 @@
         "Set up environment configuration (.env templates)"
       ],
       "dependencies": {
-        "depends_on_ids": []
+        "depends_on_ids": [],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint1-002",
-      "sprint": 1,
       "category": "data_layer",
       "priority": "critical",
       "description": "Qdrant Vector Database Setup",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Add Qdrant to docker-compose.yml",
         "Create collections for document embeddings",
@@ -36,16 +36,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint1-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint1-003",
-      "sprint": 1,
       "category": "mcp_servers",
       "priority": "critical",
       "description": "MCP Server Framework",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Create base MCP server template",
         "Implement mcp-server-jira (read-only)",
@@ -55,16 +57,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint1-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint1-004",
-      "sprint": 1,
       "category": "frontend",
       "priority": "high",
       "description": "Basic Chat Interface",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Create chat UI component with dark/light theme",
         "Implement message streaming via SSE",
@@ -74,16 +78,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint1-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint2-001",
-      "sprint": 2,
       "category": "intelligence",
       "priority": "critical",
       "description": "Intent Router Implementation",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Build classification prompt for intent routing",
         "Implement Direct Retrieval path (Vector DB)",
@@ -94,16 +100,18 @@
         "depends_on_ids": [
           "sprint1-002",
           "sprint1-003"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint2-002",
-      "sprint": 2,
       "category": "rag",
       "priority": "high",
       "description": "Knowledge RAG Pipeline",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Implement document ingestion API",
         "Build metadata extraction for chunks",
@@ -113,16 +121,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint1-002"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint3-001",
-      "sprint": 3,
       "category": "agents",
       "priority": "critical",
       "description": "LangGraph Action Agent",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Set up LangGraph state machine",
         "Implement Scout Node (duplicate detection)",
@@ -133,16 +143,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint2-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint3-002",
-      "sprint": 3,
       "category": "agents",
       "priority": "high",
       "description": "Jira Ticket Workflows",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Create Ticket workflow",
         "Update Status workflow",
@@ -152,16 +164,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint3-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint4-001",
-      "sprint": 4,
       "category": "reliability",
       "priority": "critical",
       "description": "Golden Dataset Creation",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Define test case schema",
         "Create 50+ real-world examples",
@@ -171,16 +185,18 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint3-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     },
     {
       "id": "sprint4-002",
-      "sprint": 4,
       "category": "reliability",
       "priority": "critical",
       "description": "RAGAS Evaluation Pipeline",
       "status": "pending",
+      "passes": false,
       "steps": [
         "Integrate RAGAS library",
         "Implement Faithfulness metric",
@@ -190,7 +206,9 @@
       "dependencies": {
         "depends_on_ids": [
           "sprint4-001"
-        ]
+        ],
+        "exclusive_write_paths": null,
+        "read_only_paths": null
       }
     }
   ]

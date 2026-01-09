@@ -1,166 +1,251 @@
 """
-Qdrant Vector Database Service for GravityWork.
-Handles document embeddings and semantic search.
+Qdrant Vector Database Service for GravityWork
+
+This service provides a wrapper around Qdrant for:
+- Creating and managing collections
+- Storing and retrieving document embeddings
+- Performing vector similarity searches
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-
-import structlog
-from pydantic import BaseModel
-from qdrant_client import QdrantClient
+import os
+from typing import List, Dict, Any, Optional
+from qdrant_client import QdrantClient, models
 from qdrant_client.http import models as qdrant_models
-
-logger = structlog.get_logger()
-
-
-class DocumentChunk(BaseModel):
-    """A document chunk with metadata."""
-    id: str
-    content: str
-    metadata: Dict[str, Any]
-    embedding: Optional[List[float]] = None
-
-
-class SearchResult(BaseModel):
-    """Search result from Qdrant."""
-    id: str
-    content: str
-    score: float
-    metadata: Dict[str, Any]
-
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 class QdrantService:
     """
-    Service for interacting with Qdrant vector database.
-    
-    Implements hierarchical chunking strategy for document retrieval.
+    Wrapper service for Qdrant vector database operations.
     """
-    
-    def __init__(
+
+    def __init__(self, host: str = None, port: int = None):
+        """
+        Initialize Qdrant client.
+
+        Args:
+            host: Qdrant server host (defaults to QDRANT_HOST env var)
+            port: Qdrant server port (defaults to QDRANT_PORT env var or 6333)
+        """
+        self.host = host or os.getenv("QDRANT_HOST", "localhost")
+        self.port = port or int(os.getenv("QDRANT_PORT", "6333"))
+        self.client = QdrantClient(host=self.host, port=self.port)
+
+    def create_collection(
         self,
-        host: str = "localhost",
-        port: int = 6333,
-        collection_name: str = "gravitywork_docs"
-    ):
-        self.host = host
-        self.port = port
-        self.collection_name = collection_name
-        self._client: Optional[QdrantClient] = None
-    
-    @property
-    def client(self) -> QdrantClient:
-        """Lazy initialization of Qdrant client."""
-        if self._client is None:
-            self._client = QdrantClient(host=self.host, port=self.port)
-            logger.info("qdrant_connected", host=self.host, port=self.port)
-        return self._client
-    
-    async def ensure_collection(self, vector_size: int = 1536):
-        """Create collection if it doesn't exist."""
-        collections = self.client.get_collections().collections
-        exists = any(c.name == self.collection_name for c in collections)
-        
-        if not exists:
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=qdrant_models.VectorParams(
-                    size=vector_size,
-                    distance=qdrant_models.Distance.COSINE
-                )
-            )
-            logger.info("qdrant_collection_created", name=self.collection_name)
-        
-        return exists
-    
-    async def upsert_chunks(self, chunks: List[DocumentChunk]) -> int:
-        """Insert or update document chunks."""
-        points = [
-            qdrant_models.PointStruct(
-                id=chunk.id,
-                vector=chunk.embedding,
-                payload={
-                    "content": chunk.content,
-                    **chunk.metadata,
-                    "indexed_at": datetime.utcnow().isoformat()
-                }
-            )
-            for chunk in chunks
-            if chunk.embedding is not None
-        ]
-        
-        if points:
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            logger.info("qdrant_upserted", count=len(points))
-        
-        return len(points)
-    
-    async def search(
-        self,
-        query_embedding: List[float],
-        limit: int = 5,
-        filters: Optional[Dict[str, Any]] = None
-    ) -> List[SearchResult]:
-        """Semantic search for relevant documents."""
-        
-        # Build filter if provided
-        qdrant_filter = None
-        if filters:
-            conditions = [
-                qdrant_models.FieldCondition(
-                    key=key,
-                    match=qdrant_models.MatchValue(value=value)
-                )
-                for key, value in filters.items()
-            ]
-            qdrant_filter = qdrant_models.Filter(must=conditions)
-        
-        results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_embedding,
-            limit=limit,
-            query_filter=qdrant_filter
-        )
-        
-        return [
-            SearchResult(
-                id=str(hit.id),
-                content=hit.payload.get("content", ""),
-                score=hit.score,
-                metadata={
-                    k: v for k, v in hit.payload.items() 
-                    if k != "content"
-                }
-            )
-            for hit in results
-        ]
-    
-    async def delete_by_project(self, project_id: str) -> int:
-        """Delete all chunks for a project."""
-        self.client.delete(
-            collection_name=self.collection_name,
-            points_selector=qdrant_models.FilterSelector(
-                filter=qdrant_models.Filter(
-                    must=[
-                        qdrant_models.FieldCondition(
-                            key="project_id",
-                            match=qdrant_models.MatchValue(value=project_id)
-                        )
-                    ]
-                )
-            )
-        )
-        logger.info("qdrant_deleted_project", project_id=project_id)
-        return 1  # Qdrant doesn't return count
-    
-    async def health_check(self) -> bool:
-        """Check if Qdrant is reachable."""
+        collection_name: str,
+        vector_size: int = 1536,
+        distance_metric: str = "Cosine"
+    ) -> bool:
+        """
+        Create a new collection in Qdrant.
+
+        Args:
+            collection_name: Name of the collection to create
+            vector_size: Size of the vectors to be stored
+            distance_metric: Distance metric to use (Cosine, Euclidean, Dot)
+
+        Returns:
+            bool: True if collection was created, False if it already exists
+        """
         try:
-            self.client.get_collections()
+            # Check if collection already exists
+            if self.collection_exists(collection_name):
+                return False
+
+            # Create the collection
+            self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config=models.VectorParams(
+                    size=vector_size,
+                    distance=models.Distance(distance_metric)
+                )
+            )
             return True
         except Exception as e:
-            logger.error("qdrant_health_failed", error=str(e))
+            print(f"Error creating collection {collection_name}: {e}")
+            return False
+
+    def collection_exists(self, collection_name: str) -> bool:
+        """
+        Check if a collection exists.
+
+        Args:
+            collection_name: Name of the collection to check
+
+        Returns:
+            bool: True if collection exists
+        """
+        try:
+            self.client.get_collection(collection_name)
+            return True
+        except UnexpectedResponse:
+            return False
+
+    def upsert_vectors(
+        self,
+        collection_name: str,
+        vectors: List[Dict[str, Any]]
+    ) -> bool:
+        """
+        Upsert vectors into a collection.
+
+        Args:
+            collection_name: Name of the collection
+            vectors: List of vectors with their metadata
+
+        Returns:
+            bool: True if upsert was successful
+        """
+        try:
+            # Prepare points for upsert
+            points = []
+            for vector in vectors:
+                point = qdrant_models.PointStruct(
+                    id=vector.get("id"),
+                    vector=vector["vector"],
+                    payload=vector.get("metadata", {})
+                )
+                points.append(point)
+
+            # Perform upsert
+            self.client.upsert(
+                collection_name=collection_name,
+                points=points,
+                wait=True
+            )
+            return True
+        except Exception as e:
+            print(f"Error upserting vectors: {e}")
+            return False
+
+    def search_vectors(
+        self,
+        collection_name: str,
+        query_vector: List[float],
+        limit: int = 5,
+        filters: Optional[Dict] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Search for similar vectors in a collection.
+
+        Args:
+            collection_name: Name of the collection to search
+            query_vector: Query vector for similarity search
+            limit: Maximum number of results to return
+            filters: Optional filters for metadata
+
+        Returns:
+            List of search results with scores and payloads
+        """
+        try:
+            # Convert filters if provided
+            qdrant_filters = None
+            if filters:
+                qdrant_filters = self._convert_filters(filters)
+
+            # Perform search
+            results = self.client.search(
+                collection_name=collection_name,
+                query_vector=query_vector,
+                limit=limit,
+                query_filter=qdrant_filters
+            )
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                formatted_results.append({
+                    "id": result.id,
+                    "score": result.score,
+                    "payload": result.payload
+                })
+
+            return formatted_results
+        except Exception as e:
+            print(f"Error searching vectors: {e}")
+            return []
+
+    def _convert_filters(self, filters: Dict) -> qdrant_models.Filter:
+        """
+        Convert dictionary filters to Qdrant Filter object.
+
+        Args:
+            filters: Dictionary of filter conditions
+
+        Returns:
+            Qdrant Filter object
+        """
+        conditions = []
+        for field, value in filters.items():
+            if isinstance(value, dict):
+                # Handle range queries
+                if "min" in value and "max" in value:
+                    conditions.append(
+                        qdrant_models.FieldCondition(
+                            key=field,
+                            range=qdrant_models.Range(
+                                gte=value["min"],
+                                lte=value["max"]
+                            )
+                        )
+                    )
+                # Handle exact match
+                elif "eq" in value:
+                    conditions.append(
+                        qdrant_models.FieldCondition(
+                            key=field,
+                            match=qdrant_models.MatchValue(value=value["eq"])
+                        )
+                    )
+            else:
+                # Simple exact match
+                conditions.append(
+                    qdrant_models.FieldCondition(
+                        key=field,
+                        match=qdrant_models.MatchValue(value=value)
+                    )
+                )
+
+        if len(conditions) == 1:
+            return qdrant_models.Filter(must=conditions)
+        else:
+            return qdrant_models.Filter(must=conditions)
+
+    def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
+        """
+        Get information about a collection.
+
+        Args:
+            collection_name: Name of the collection
+
+        Returns:
+            Dictionary with collection information
+        """
+        try:
+            info = self.client.get_collection(collection_name)
+            return {
+                "name": collection_name,
+                "vectors_count": info.vectors_count,
+                "points_count": info.points_count,
+                "config": info.config
+            }
+        except Exception as e:
+            print(f"Error getting collection info: {e}")
+            return {}
+
+    def delete_collection(self, collection_name: str) -> bool:
+        """
+        Delete a collection.
+
+        Args:
+            collection_name: Name of the collection to delete
+
+        Returns:
+            bool: True if deletion was successful
+        """
+        try:
+            self.client.delete_collection(collection_name)
+            return True
+        except Exception as e:
+            print(f"Error deleting collection: {e}")
             return False
