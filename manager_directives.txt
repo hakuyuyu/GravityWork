@@ -1,5 +1,36 @@
-- Priority 1: Initialize project scaffolding (README.md, Makefile).
-- Priority 2: Set up Qdrant vector database.
-- Priority 3: Implement MCP server framework.
-- Requirement: All code must be tested, documented, and typed.
-- Requirement: Clean up temp_files.txt after each session.
+### **PRIORITY 1: Infrastructure & Hygiene**
+- **Project Scaffolding**: Create a `README.md` with:
+  - Project description.
+  - Setup instructions.
+  - Architecture overview.
+- **Makefile**: Add targets for:
+  - `make setup` (install dependencies).
+  - `make test` (run tests).
+  - `make lint` (code quality checks).
+  - `make clean` (remove temp files).
+- **Temp Files**: Track all temporary files in `temp_files.txt` and clean them up.
+
+### **PRIORITY 2: Core Features**
+- **Qdrant Vector DB**: Implement basic setup with:
+  - Connection handling.
+  - Error recovery.
+  - Logging.
+- **MCP Server Framework**: Define:
+  - API endpoints.
+  - Request/response schemas.
+  - Basic error handling.
+
+### **Quality Enforcement**
+- **All code must**:
+  - Be type-annotated (Python/JS/TS).
+  - Include docstrings (Google/Numpy style).
+  - Pass linting (flake8/pylint/eslint).
+- **No "just working" code**: Refactor if messy.
+
+### **Blockers & Questions**
+- If stuck, log issues in `blockers.txt`.
+- Ask clarifications in `questions.txt`.
+
+### **Deadline**
+- Next iteration must show **at least 2 features passing** (scaffolding + one core feature).
+No temp files tracked. Start logging them.

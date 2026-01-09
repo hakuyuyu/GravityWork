@@ -18,3 +18,4 @@
 - Updated documentation in README.md
 - Implemented sprint1-001 (Project Scaffolding)
 - Implemented sprint1-002 (Qdrant Vector Database Setup)
+- Implemented sprint1-003 (MCP Server Framework)
