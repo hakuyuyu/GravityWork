@@ -37,7 +37,7 @@ qdrant:
 
 .PHONY: mcp-jira
 mcp-jira:
-	cd mcp-servers && python mcp_server_jira.py
+	cd mcp-servers && uvicorn mcp_server_jira:app --reload
 
 .PHONY: mcp-slack
 mcp-slack:

@@ -21,3 +21,4 @@
 - Implemented sprint1-003 (MCP Server Framework)
 - Implemented sprint1-004 (Basic Chat Interface)
 - Implemented sprint1-005 (API Endpoint for Chat)
+- Implemented sprint1-005 (API Endpoint for Chat)

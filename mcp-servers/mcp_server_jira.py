@@ -1,23 +1,42 @@
-from .base_mcp_server import BaseMCPServer
-from typing import Dict, Any
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import httpx
 import logging
 
-logger = logging.getLogger(__name__)
+app = FastAPI()
 
-class JiraMCPServer(BaseMCPServer):
-    def __init__(self):
-        super().__init__("jira")
+class JiraRequest(BaseModel):
+    project_id: str
+    query: str
 
-    def fetch_data(self, query: Dict[str, Any]) -> Dict[str, Any]:
-        """Fetch data from Jira."""
-        # Mock implementation for now
-        logger.info(f"Fetching data from Jira with query: {query}")
-        return {
-            "status": "success",
-            "data": {
-                "tickets": [
-                    {"id": "JIRA-1", "status": "In Progress"},
-                    {"id": "JIRA-2", "status": "Done"}
-                ]
-            }
-        }
+class JiraResponse(BaseModel):
+    tickets: list
+    error: Optional[str] = None
+
+@app.post("/mcp/jira", response_model=JiraResponse)
+async def get_jira_tickets(request: JiraRequest):
+    """
+    Endpoint for fetching Jira tickets.
+
+    Args:
+        request: JiraRequest containing the project_id and query.
+
+    Returns:
+        JiraResponse containing the list of tickets or error.
+    """
+    try:
+        # Simulate Jira API call (replace with actual Jira API integration)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://jira.example.com/rest/api/2/search",
+                params={"jql": f"project={request.project_id} AND text ~ '{request.query}'"}
+            )
+            response.raise_for_status()
+            tickets = response.json().get("issues", [])
+
+        return JiraResponse(tickets=tickets)
+
+    except Exception as e:
+        logging.error(f"Error fetching Jira tickets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
