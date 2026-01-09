@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from backend.services.qdrant.qdrant_service import QdrantService
+from backend.services.qdrant_service import QdrantService
 from backend.services.chunking_service import HierarchicalChunkingService as DocumentChunker
 from backend.routers import chat
 import logging
@@ -134,12 +134,8 @@ async def search_collection(collection_name: str, query: str, limit: int = 5):
         Search results
     """
     try:
-        # In a real implementation, we would embed the query here
-        # For now, using a dummy vector
-        query_vector = [0.1] * 768 # Match QdrantService default size
-
         results = qdrant_service.search_similar(
-            query_vector,
+            query_text=query,
             limit=limit
         )
 

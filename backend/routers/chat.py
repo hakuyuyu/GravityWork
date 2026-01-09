@@ -127,20 +127,8 @@ async def chat_endpoint(request: ChatRequest):
             response_text = await agent.run(request.message)
 
         else: # DIRECT_ANSWER / UNKNOWN
-            # Retrieval (RAG)
-            try:
-                query_vector = [0.1] * 768  # Dummy vector
-                results = qdrant_service.search_similar(query_vector, limit=3)
-                
-                if results:
-                    context = "\n".join([f"- {r['text']}" for r in results])
-                    response_text = f"Based on knowledge base:\n{context[:500]}..."
-                    sources = results
-                else:
-                    response_text = "I couldn't find any specific documents about that in the knowledge base."
-            except Exception as e:
-                logger.warning(f"Qdrant search failed: {e}")
-                response_text = "Knowledge base is not available. Please check Qdrant connection."
+            # Delegate to Agent (which now has Qdrant scouting)
+            response_text = await agent.run(request.message)
 
         return ChatResponse(
             response=response_text,

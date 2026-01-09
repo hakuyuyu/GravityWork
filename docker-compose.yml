@@ -26,6 +26,9 @@ services:
     environment:
       - PYTHONPATH=/app
       - QDRANT_URL=http://qdrant:6333
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     depends_on:
       - qdrant
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload

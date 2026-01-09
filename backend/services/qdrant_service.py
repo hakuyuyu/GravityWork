@@ -20,7 +20,7 @@ class QdrantService:
     """Wrapper service for Qdrant vector database operations"""
 
     def __init__(self):
-        """Initialize Qdrant client from environment variables"""
+        """Initialize Qdrant client and embedding model"""
         qdrant_host = os.getenv("QDRANT_HOST", "localhost")
         qdrant_port = int(os.getenv("QDRANT_PORT", "6333"))
 
@@ -30,12 +30,33 @@ class QdrantService:
             prefer_grpc=False
         )
         self.collection_name = "documents"
+        
+        # Initialize embedding model
+        try:
+            from sentence_transformers import SentenceTransformer
+            self.model = SentenceTransformer('all-MiniLM-L6-v2')
+            self.vector_size = 384
+            print("Initialized SentenceTransformer 'all-MiniLM-L6-v2'")
+        except ImportError:
+            print("SentenceTransformer not found. Using dummy embeddings.")
+            self.model = None
+            self.vector_size = 768
 
-    def create_collection(self, vector_size: int = 768) -> bool:
+    def _get_embedding(self, text: str) -> List[float]:
+        """Generate embedding for text"""
+        if self.model:
+            embedding = self.model.encode(text)
+            return embedding.tolist()
+        return [0.1] * self.vector_size
+
+    def create_collection(self, collection_name: str = "documents", vector_size: int = None) -> bool:
         """Create a collection for document embeddings"""
+        if vector_size is None:
+            vector_size = self.vector_size
+            
         try:
             self.client.create_collection(
-                collection_name=self.collection_name,
+                collection_name=collection_name,
                 vectors_config=qdrant_models.VectorParams(
                     size=vector_size,
                     distance=qdrant_models.Distance.COSINE
@@ -59,11 +80,17 @@ class QdrantService:
             return False
 
         # Prepare points for upsert
+        import uuid
         points = []
         for chunk in chunks:
+            vector = chunk.embedding or self._get_embedding(chunk.text)
+            
+            # Generate deterministic UUID based on chunk text
+            point_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, chunk.text))
+            
             point = qdrant_models.PointStruct(
-                id=str(hash(chunk.text)),  # Simple hash-based ID
-                vector=chunk.embedding or [0.0] * 768,  # Default embedding if none provided
+                id=point_id,
+                vector=vector,
                 payload={
                     "text": chunk.text,
                     "metadata": chunk.metadata
@@ -81,9 +108,15 @@ class QdrantService:
             print(f"Error upserting chunks: {e}")
             return False
 
-    def search_similar(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
-        """Search for similar documents"""
+    def search_similar(self, query_vector: List[float] = None, query_text: str = None, limit: int = 5) -> List[Dict[str, Any]]:
+        """Search for similar documents using vector or text"""
         try:
+            if query_text:
+                query_vector = self._get_embedding(query_text)
+            
+            if not query_vector:
+                return []
+
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
@@ -105,5 +138,6 @@ class QdrantService:
         except Exception as e:
             print(f"Error getting collection info: {e}")
             return {}
+
 
 

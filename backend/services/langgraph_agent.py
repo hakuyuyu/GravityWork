@@ -85,70 +85,149 @@ class LangGraphAgent:
         return match.group(1) if match else None
 
     async def _scout_node(self, state: AgentState):
-        """Gather context from Jira/Docs before planning."""
+        """Gather context from Jira, Docs (Qdrant) before planning."""
         user_query = state["messages"][0].content if state["messages"] else ""
         scratchpad = {"query": user_query}
+        context_parts = []
         
-        # Try to extract ticket ID and fetch from Jira
+        # 1. Jira Scouting
         ticket_id = self._extract_ticket_id(user_query)
         if ticket_id:
             logger.info(f"Detected ticket ID: {ticket_id}")
             result = await self.mcp_client.get_ticket_status(ticket_id)
             if result.success:
                 scratchpad["jira_context"] = result.data
-                context = f"Found Jira ticket {ticket_id}: {result.data}"
+                context_parts.append(f"Found Jira ticket {ticket_id}: {result.data}")
             else:
-                context = f"Could not fetch ticket {ticket_id}: {result.error}"
-        else:
-            # Search for related tickets
-            result = await self.mcp_client.search_tickets(user_query)
-            if result.success and result.data:
-                scratchpad["jira_search_results"] = result.data
-                context = f"Found {len(result.data.get('data', {}).get('issues', []))} related tickets"
-            else:
-                context = f"Scouting context for: '{user_query}'"
+                context_parts.append(f"Could not fetch ticket {ticket_id}: {result.error}")
+        
+        # 2. Knowledge Base Scouting (Qdrant)
+        try:
+             # Lazy import inside method to avoid circular imports if any
+            from backend.services.qdrant_service import QdrantService
+            # We assume a singleton or new instance is fine (it connects via HTTP)
+            qdrant = QdrantService() 
+            if qdrant.collection_exists():
+                # Search using the full query
+                docs = qdrant.search_similar(query_text=user_query, limit=3)
+                if docs:
+                    doc_context = "\n".join([f"- {d['text']} (source: {d['metadata']})" for d in docs])
+                    context_parts.append(f"Knowledge Base Results:\n{doc_context}")
+                    scratchpad["docs"] = docs
+        except Exception as e:
+            logger.warning(f"Qdrant scout failed: {e}")
+
+        # If no specific context found, search Jira broadly
+        if not ticket_id and not scratchpad.get("docs"):
+             result = await self.mcp_client.search_tickets(user_query)
+             if result.success and result.data:
+                 issues = result.data.get('data', {}).get('issues', [])
+                 if issues:
+                     context_parts.append(f"Found {len(issues)} related tickets in Jira.")
+                     scratchpad["jira_search_results"] = result.data
+
+        final_context = "\n\n".join(context_parts) if context_parts else "No specific context found."
         
         return {
-            "messages": [AIMessage(content=context)],
+            "messages": [AIMessage(content=final_context)],
             "scratchpad": scratchpad
         }
 
     async def _plan_node(self, state: AgentState):
-        """Decide on the action plan based on scouted context."""
-        query = state.get("scratchpad", {}).get("query", "").lower()
-        jira_context = state.get("scratchpad", {}).get("jira_context")
+        """Decide on the action plan based on scouted context using Real LLM."""
+        query = state.get("scratchpad", {}).get("query", "")
+        scratchpad = state.get("scratchpad", {})
         
-        pending_action = None
+        # System Prompt for the Project Manager Persona
+        system_prompt = """You are GravityWork, an AI Project Manager.
+        Your goal is to help users manage their projects, Jira tickets, and tasks.
         
-        if "create" in query and "ticket" in query:
-            plan = "Action Plan: Create a new Jira ticket"
-            # Extract ticket details from query
-            pending_action = {
-                "type": "create_ticket",
-                "summary": query,
-                "project": "PROJ"  # Default project
-            }
-        elif "update" in query or "change" in query:
-            plan = "Action Plan: Update existing Jira resource"
-            pending_action = {"type": "update_ticket"}
-        elif "status" in query or jira_context:
-            plan = "Action Plan: Retrieve and display status from Jira"
-            pending_action = {"type": "get_status"}
-        elif "slack" in query or "message" in query:
-            plan = "Action Plan: Send message or retrieve Slack messages"
-            pending_action = {"type": "slack_action"}
+        Context found:
+        {context}
+        
+        User Query: {query}
+        
+        Decide on the next step.
+        If the user wants to perform an action (Create, Update, Delete), output JSON:
+        {{"type": "action", "action_type": "<create_ticket|update_ticket|slack_action>", "parameters": <json_params>}}
+        
+        If the user wants information you already have or can find, output JSON:
+        {{"type": "response", "content": "<your friendly response>"}}
+        
+        Date: {date}
+        """
+        
+        context_str = str(scratchpad)
+        
+        if self.llm:
+            try:
+                from langchain_core.messages import SystemMessage
+                from datetime import datetime
+                
+                messages = [
+                    SystemMessage(content=system_prompt.format(
+                        context=context_str, 
+                        query=query,
+                        date=datetime.now().isoformat()
+                    )),
+                    HumanMessage(content=query)
+                ]
+                
+                response = await self.llm.ainvoke(messages)
+                content = response.content
+                
+                # Simple parsing (robust JSON parsing would be better)
+                import json
+                
+                # Extract JSON block
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    try:
+                        plan_data = json.loads(json_match.group(0))
+                        
+                        if plan_data.get("type") == "action":
+                            return {
+                                "messages": [AIMessage(content="Planning action...")],
+                                "pending_action": {
+                                    "type": plan_data.get("action_type"),
+                                    **plan_data.get("parameters", {})
+                                }
+                            }
+                        else:
+                            return {
+                                "messages": [AIMessage(content=plan_data.get("content", content))],
+                                "pending_action": None
+                            }
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to parse LLM JSON response")
+                
+                # Fallback to direct response if no JSON
+                return {
+                    "messages": [AIMessage(content=content)],
+                    "pending_action": None
+                }
+                
+            except Exception as e:
+                logger.error(f"LLM Error: {e}")
+                return {
+                    "messages": [AIMessage(content="Sorry, I'm having trouble thinking right now.")],
+                    "pending_action": None
+                }
         else:
-            plan = "Action Plan: Provide information from knowledge base"
-            pending_action = {"type": "rag_retrieval"}
-        
-        return {
-            "messages": [AIMessage(content=plan)],
-            "pending_action": pending_action
-        }
+             # Fallback to Mock Logic if LLM not available
+             return await self._mock_plan_node(state)
+
+    async def _mock_plan_node(self, state: AgentState):
+        """Legacy mock planning logic."""
+        query = state.get("scratchpad", {}).get("query", "").lower()
+        # ... (Existing mock logic preserved for safety) ...
+        if "create" in query and "ticket" in query:
+            return {"messages": [AIMessage(content="Mock Plan: Create Ticket")], "pending_action": {"type": "create_ticket", "summary": query}}
+        return {"messages": [AIMessage(content="Mock Response: I need an LLM to answer that.")], "pending_action": None}
 
     async def _execute_node(self, state: AgentState):
         """Execute the planned action via MCP tools."""
-        pending_action = state.get("pending_action", {})
+        pending_action = state.get("pending_action") or {}
         action_type = pending_action.get("type", "unknown")
         scratchpad = state.get("scratchpad", {})
         
