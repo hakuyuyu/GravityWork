@@ -8,7 +8,7 @@ detached: false
 docker_timeout: 600
 git_user_email: recac-agent@example.com
 git_user_name: RECAC Agent
-image: ghcr.io/process-failed-successfully/recac-agent:latest
+image: recac-agent:local
 jira: ""
 jira_label: ""
 manager_first: false
@@ -34,8 +34,8 @@ notifications:
 orchestrator:
     agent_model: mistralai/devstral-2512:free
     agent_provider: openrouter
-    image: ghcr.io/process-failed-successfully/recac-agent:latest
-    image_pull_policy: Always
+    image: recac-agent:local
+    image_pull_policy: IfNotPresent
     interval: 1m0s
     jira_label: recac-agent
     jira_query: ""
