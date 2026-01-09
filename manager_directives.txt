@@ -1,41 +1,35 @@
-**CRITICAL: Python Environment**
-- Always use a virtual environment (`python3 -m venv venv && source venv/bin/activate`) for dependencies.
-- Never run `pip install` globally.
+**IMMEDIATE ACTIONS REQUIRED:**
 
-**PRIORITY 1: Project Scaffolding**
-- Create a `README.md` with:
-  - Project description
-  - Setup instructions
-  - Architecture overview
-- Create a `Makefile` with:
-  - `make setup` (installs dependencies)
-  - `make test` (runs tests)
-  - `make clean` (removes temp files)
+1. **Project Scaffolding (Priority 1)**
+   - Create `README.md` with project overview, setup, and architecture.
+   - Create `Makefile` with `test`, `build`, `clean` targets.
+   - Set up `src/`, `tests/`, `docs/` directories.
 
-**PRIORITY 2: Qdrant Vector Database Setup**
-- Use official Qdrant Python client.
-- Document connection logic in `README.md`.
-- Add error handling for DB failures.
+2. **Qdrant Vector DB Setup (Priority 1)**
+   - Dockerize Qdrant or use cloud instance.
+   - Write connection helper with error handling.
 
-**PRIORITY 3: MCP Server Framework**
-- Define API endpoints in `openapi.yaml`.
-- Use FastAPI or Flask (document choice in `README.md`).
+3. **MCP Server Framework (Priority 1)**
+   - Use FastAPI/Express.js for REST API.
+   - Ensure OpenAPI/Swagger docs are generated.
 
-**CODE QUALITY RULES**
-- **No undocumented functions**: Every function must have:
-  - Type hints (Python)
-  - Docstrings (Google style)
-- **No temp files**: Clean up after tests.
-- **No hardcoded secrets**: Use environment variables.
+4. **Frontend (Priority 2)**
+   - Basic React chat UI (no fancy animations yet).
+   - Must be responsive and accessible.
 
-**NEXT STEPS**
-1. Agents must report blockers in `blockers.txt`.
-2. Agents must log successes in `successes.txt`.
-3. Agents must ask questions in `questions.txt`.
+5. **Intent Router (Priority 2)**
+   - Use TypeScript for type safety.
+   - Must log intents for debugging.
 
-**REJECT CRITERIA**
-- If any feature is submitted without:
-  - Tests
-  - Documentation
-  - Clean code
-  → **REJECTED**.
+6. **Testing (Priority 3)**
+   - Write unit tests for all core functions.
+   - Set up CI (GitHub Actions/GitLab CI).
+
+**CODE QUALITY RULES:**
+- No code without JSDoc/TypeScript.
+- No temp files left behind.
+- No "just working" code—must be tested.
+
+**REPORTING:**
+- If stuck, write to `blockers.txt`.
+- If unsure, ask in `questions.txt`.
